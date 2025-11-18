@@ -120,6 +120,33 @@ which wl-paste
 3. Press `<leader>ip` for quick paste or `<leader>op` for custom
 4. Image is saved and linked automatically
 
+### PDF Parsing Workflow
+
+Turn lecture slide PDFs into editable Markdown without leaving Neovim.
+
+**Dependencies**
+- Install `pdftotext` (Poppler): `brew install poppler` on macOS or use your package manager on Linux
+- Optional: point `vim.g.custom_pdf_parser_command` to another CLI that outputs Markdown/text to stdout (e.g. `{ 'pdf2md' }`)
+
+**Import new PDFs (`<leader>pa`):**
+1. Open the markdown note where the content should land.
+2. Press `<leader>pa` and pick any PDF on disk.
+3. The file is copied into the note's `attachments/` folder and parsed.
+4. A block is inserted at the cursor:
+   - `## Notes from <filename>`
+   - `[[attachments/<filename>.pdf]]` link for quick access
+   - Extracted Markdown ready for editing.
+
+**Parse existing attachments (`<leader>pp`):**
+1. With a markdown note open, press `<leader>pp`.
+2. Select one of the PDFs already living in `attachments/`.
+3. The parsed Markdown is inserted at the cursor; the PDF stays untouched.
+
+**Tips & verification**
+- Run `which pdftotext` (or your custom parser) to confirm the binary is available before relying on the shortcut.
+- Parsing uses the command synchronously—very large PDFs can take a few seconds.
+- If the parser returns no text, the note gets `_No text extracted_` so you can spot problematic files quickly.
+
 ### Markdown Editing
 
 **Toggle Conceal:**
