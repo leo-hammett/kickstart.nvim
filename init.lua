@@ -132,9 +132,6 @@ vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
 vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
 vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
 
--- Markdown Pasting
-vim.keymap.set('n', '<leader>ip', ':PasteImage<CR>', { desc = 'Paste image (relative to note)' })
-
 -- Keybinds to make split navigation easier.
 --  Use CTRL+<hjkl> to switch between windows
 --
@@ -404,6 +401,7 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sn', function()
         builtin.find_files { cwd = vim.fn.stdpath 'config' }
       end, { desc = '[S]earch [N]eovim files' })
+
     end,
   },
 
@@ -855,7 +853,27 @@ require('lazy').setup({
       --  - va)  - [V]isually select [A]round [)]paren
       --  - yinq - [Y]ank [I]nside [N]ext [Q]uote
       --  - ci'  - [C]hange [I]nside [']quote
-      require('mini.ai').setup { n_lines = 500 }
+      require('mini.ai').setup {
+        n_lines = 500,
+        -- Custom textobjects for Markdown
+        custom_textobjects = {
+          -- Markdown headings
+          h = require('mini.ai').gen_spec.treesitter({
+            a = '@heading',
+            i = '@heading',
+          }, {}),
+          -- Markdown code blocks
+          c = require('mini.ai').gen_spec.treesitter({
+            a = '@code_block',
+            i = '@code_block',
+          }, {}),
+          -- Markdown links
+          l = require('mini.ai').gen_spec.treesitter({
+            a = '@link',
+            i = '@link',
+          }, {}),
+        },
+      }
 
       -- Add/delete/replace surroundings (brackets, quotes, etc.)
       --
@@ -889,7 +907,7 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'latex' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'latex', 'typst' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -956,6 +974,10 @@ require('lazy').setup({
     },
   },
 })
+
+pcall(function()
+  require('custom.config.custom_keymaps').setup()
+end)
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et

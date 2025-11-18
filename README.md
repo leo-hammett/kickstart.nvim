@@ -10,6 +10,138 @@ A starting point for Neovim that is:
 
 **NOT** a Neovim distribution, but instead a starting point for your configuration.
 
+## Personal Customisations
+
+- `lua/custom/plugins/obsidian.lua` wires in `epwalsh/obsidian.nvim` for the `~/vaults/Lexicon` workspace, adds daily-note/search/open keymaps under `<leader>o*`, enforces Markdown conceal settings, and provides a bespoke `<leader>op` paste helper that drops screenshots into an `attachments/` folder beside the current note. The global `<leader>ip` mapping in `init.lua` is the quick entry point for that workflow.
+- `lua/custom/plugins/nabla.lua` installs `jbyuki/nabla.nvim`, ensures the LaTeX parser and `tree-sitter-cli` are available via Mason, and exposes `<leader>p` to render math blocks in-place.
+- `lua/custom/plugins/snacks.lua` pulls in `folke/snacks.nvim` (with the image module enabled) so pasted images or attachments can be previewed directly inside Neovim buffers.
+- `init.lua` adds quality-of-life tweaks beyond upstream Kickstart: automatic tab width detection via `NMAC427/guess-indent.nvim`, Markdown-focused LSP support by registering `marksman`, an explicit `PasteImage` keybind, and `tokyonight` styling changes (non-italic comments).
+- `lua/custom/plugins/typst.lua` adds Typst support with syntax highlighting, LSP integration, and keymaps for compiling/watching PDFs.
+
+## Neovim Workflow Guide
+
+### Obsidian Note-Taking Workflow
+
+This configuration is optimized for working with Obsidian vaults, specifically the `~/vaults/Lexicon` workspace.
+
+#### Essential Keymaps
+
+**Daily Note Management:**
+- `<leader>ot` - Open today's daily note (creates if missing)
+- `<leader>on` - Create a new note
+- `<leader>od` - Create new note with title prompt
+- `<leader>oi` - Insert Obsidian template
+
+**Navigation & Search:**
+- `<leader>os` - Search notes in vault
+- `<leader>oq` - Quick switch between recent notes
+- `<leader>of` - Telescope: find files in vault
+- `<leader>og` - Telescope: live grep in vault
+- `<leader>oo` - Open current note in Obsidian app
+
+**Content Management:**
+- `<leader>op` - Paste image to attachments folder (with prompts for folder/name)
+- `<leader>ip` - Quick paste image (uses default location)
+- `<leader>oc` - Toggle conceal level (useful when editing raw Markdown)
+- `<leader>p` - Preview LaTeX/math equations with Nabla
+
+**Quality Control:**
+- `:ObsidianLint` - Show Markdown diagnostics (broken links, etc.)
+
+#### Markdown Textobjects
+
+Enhanced textobjects for efficient editing:
+- `vih` / `vah` - Select inside/around heading
+- `vic` / `vac` - Select inside/around code block
+- `vil` / `val` - Select inside/around link
+
+#### Workflow Tips
+
+1. **Starting Your Day:**
+   - Open Neovim in your vault directory
+   - Press `<leader>ot` to jump to today's note
+   - Use `<leader>oi` to insert a template if you have one
+
+2. **Capturing Information:**
+   - Take a screenshot and press `<leader>op`
+   - Choose attachment folder (defaults to `attachments/` relative to note)
+   - Name the file or use timestamp default
+   - Image will be pasted and linked automatically
+
+3. **Linking Notes:**
+   - Type `[[` to trigger Obsidian completion
+   - Use `<leader>oq` to quickly jump between related notes
+   - Use `<leader>os` to search across all notes
+
+4. **Editing Efficiency:**
+   - Use `<leader>oc` to toggle conceal when you need to see raw Markdown
+   - Use textobjects (`vih`, `vic`) to quickly select and edit sections
+   - Use `<leader>og` to search for specific content across the vault
+
+5. **Math & Equations:**
+   - Write LaTeX in your notes
+   - Press `<leader>p` to see a rendered preview popup
+   - Great for checking complex equations before finalizing
+
+### Typst Workflow
+
+Typst is a modern markup-based typesetting system. This config provides full support.
+
+#### Keymaps (Typst files only)
+
+- `<leader>tc` - Compile current `.typst` file to PDF
+- `<leader>tw` - Watch mode: auto-compile on save
+- `<leader>to` - Open the generated PDF (platform-aware)
+
+#### Insert Mode Shortcuts
+
+- `<C-l>m` - Insert inline math: `#math.rad($0)`
+- `<C-l>M` - Insert block: `#block($0)`
+
+#### Setup Requirements
+
+1. Install Typst: `brew install typst` (macOS) or see [typst.app](https://typst.app/docs/getting-started/)
+2. Install `typst-lsp` via Mason (`:Mason` then search for `typst-lsp`)
+3. Open a `.typst` file and start writing!
+
+#### Workflow Tips
+
+1. **Quick Start:**
+   - Create a `.typst` file
+   - Write your content
+   - Press `<leader>tc` to compile
+   - Press `<leader>to` to view the PDF
+
+2. **Live Editing:**
+   - Use `<leader>tw` to enable watch mode
+   - Edit your file, PDF updates automatically
+   - Great for iterative document design
+
+3. **LSP Features:**
+   - Autocompletion for Typst syntax
+   - Go to definition for functions/variables
+   - Diagnostics for errors
+   - All standard LSP features work!
+
+### General Neovim Tips
+
+#### Search & Navigation
+- `<leader>sf` - Find files
+- `<leader>sg` - Live grep (search content)
+- `<leader>sw` - Search current word
+- `<leader>sh` - Search help documentation
+- `<leader>sk` - Search keymaps
+
+#### Window Management
+- `<C-h/j/k/l>` - Navigate between windows
+- `<leader>f` - Format current buffer
+
+#### Getting Help
+- `:help` - Open help
+- `<leader>sh` - Search help topics
+- `:Lazy` - View/manage plugins
+- `:checkhealth` - Diagnose issues
+
 ## Installation
 
 ### Install Neovim

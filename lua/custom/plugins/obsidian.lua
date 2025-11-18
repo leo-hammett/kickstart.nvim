@@ -14,7 +14,31 @@ return {
     -- Required.
     'nvim-lua/plenary.nvim',
 
-    -- see below for full list of optional dependencies 👇
+    -- Image rendering for embedded images
+    {
+      '3rd/image.nvim',
+      opts = {
+        backend = 'kitty', -- or 'ueberzug' for Linux, 'kitty' for Kitty terminal
+        integrations = {
+          markdown = {
+            enabled = true,
+            clear_in_insert_mode = false,
+            download_remote_images = true,
+            only_render_image_at_cursor = false,
+            filetypes = { 'markdown', 'vimwiki' },
+          },
+        },
+        max_width = nil,
+        max_height = nil,
+        max_width_window_percentage = nil,
+        max_height_window_percentage = 50,
+        window_overlap_clear_enabled = false,
+        window_overlap_clear_ft_ignore = { 'cmp_menu', 'cmp_docs', '' },
+        editor_only_render_when_focused = false,
+        tmux_show_only_in_active_window = false,
+        hijack_file_patterns = { '*.png', '*.jpg', '*.jpeg', '*.gif', '*.webp', '*.svg', '*.excalidraw' },
+      },
+    },
   },
   opts = {
     workspaces = {
@@ -22,6 +46,31 @@ return {
         name = 'lexicon',
         path = '~/vaults/Lexicon/',
       },
+    },
+
+    -- Daily notes configuration
+    daily_notes = {
+      -- Optional, if you keep daily notes in a separate directory.
+      folder = 'Areas/Daily Notes',
+      -- Optional, if you want to change the date format for the ID of daily notes.
+      date_format = '%Y-%m-%d',
+      -- Optional, if you want to change the date format of the default alias of daily notes.
+      alias_format = '%B %-d, %Y',
+      -- Optional, default tags to add to each new daily note created.
+      default_tags = { 'daily-notes' },
+      -- Optional, if you want to automatically insert a template from your template directory like 'daily.md'
+      template = nil,
+    },
+
+    -- Attachments configuration
+    attachments = {
+      -- The directory to place images/attachments. Can be absolute or relative to the vault root.
+      img_folder = 'attachments',
+      -- A function that determines the text to insert when pasting an image
+      img_text_func = function(client, path)
+        path = client:vault_relative_path(path) or path
+        return string.format('![[%s]]', path.filename)
+      end,
     },
 
     -- Optional, completion of wiki links, local markdown links, and tags using nvim-cmp.
@@ -106,38 +155,96 @@ return {
     vim.keymap.set('n', '<leader>os', '<cmd>ObsidianSearch<CR>', { desc = 'Obsidian Search' })
     vim.keymap.set('n', '<leader>on', '<cmd>ObsidianNew<CR>', { desc = 'Obsidian New note' })
 
-    -- ---- Per-note attachments paste helper ----
-    -- Requires: brew install pngpaste
+    -- Template insertion
+    vim.keymap.set('n', '<leader>oi', '<cmd>ObsidianTemplate<CR>', { desc = 'Insert Obsidian template' })
+
+    -- Prompted new note creation
+    vim.keymap.set('n', '<leader>od', function()
+      local title = vim.fn.input('Note title: ')
+      if title ~= '' then
+        vim.cmd('ObsidianNew ' .. title)
+      end
+    end, { desc = 'New note with prompt' })
+
+    -- Toggle conceal for Markdown editing
+    vim.api.nvim_create_autocmd('FileType', {
+      pattern = 'markdown',
+      callback = function()
+        vim.keymap.set('n', '<leader>oc', function()
+          local conceal = vim.wo.conceallevel
+          vim.wo.conceallevel = conceal == 0 and 2 or 0
+          vim.notify('Conceallevel: ' .. vim.wo.conceallevel)
+        end, { buffer = 0, desc = 'Toggle conceal for Markdown' })
+      end,
+    })
+
+    -- ---- Enhanced per-note attachments paste helper ----
+    -- Platform-specific clipboard tools required:
+    --   macOS: brew install pngpaste
+    --   Linux (X11): xclip or xsel
+    --   Linux (Wayland): wl-clipboard
+    --   Windows: built-in (uses PowerShell)
     local function obsidian_paste_local()
       local vault = vim.fn.expand '~/vaults/Lexicon' -- your vault root
       local note = vim.api.nvim_buf_get_name(0) -- absolute path to current note
       if note == '' then
+        vim.notify('No file open', vim.log.levels.WARN)
         return
       end
 
+      -- Check if clipboard tool is available (basic check)
+      local has_clipboard = false
+      if vim.fn.has 'mac' == 1 then
+        has_clipboard = vim.fn.executable 'pngpaste' == 1
+      elseif vim.fn.has 'unix' == 1 then
+        has_clipboard = (vim.fn.executable 'xclip' == 1) or (vim.fn.executable 'wl-paste' == 1)
+      elseif vim.fn.has 'win32' == 1 then
+        has_clipboard = true -- Windows has built-in clipboard support
+      end
+
+      if not has_clipboard then
+        local platform_msg = vim.fn.has 'mac' == 1 and 'pngpaste' or (vim.fn.has 'unix' == 1 and 'xclip or wl-clipboard' or '')
+        vim.notify('Clipboard tool not found. Install: ' .. platform_msg, vim.log.levels.WARN)
+        -- Continue anyway, obsidian.nvim might handle it
+      end
+
+      local rel_dir = ''
+      local default_folder = 'attachments'
+
       if note:find(vault, 1, true) then
-        -- If inside vault: use note’s directory
-        local rel_dir = vim.fn.fnamemodify(note, ':h'):gsub('^' .. vim.pesc(vault) .. '/?', '')
-        folder = (rel_dir ~= '' and (rel_dir .. '/attachments')) or 'attachments'
+        -- If inside vault: use note's directory
+        rel_dir = vim.fn.fnamemodify(note, ':h'):gsub('^' .. vim.pesc(vault) .. '/?', '')
+        default_folder = (rel_dir ~= '' and (rel_dir .. '/attachments')) or 'attachments'
       else
         -- If outside vault: try to create a local attachments folder next to the file
         local note_dir = vim.fn.fnamemodify(note, ':h')
         local abs_dir = note_dir .. '/attachments'
         vim.fn.mkdir(abs_dir, 'p')
-        folder = vim.fn.fnamemodify(abs_dir, ':.') -- make it relative to CWD
+        default_folder = vim.fn.fnamemodify(abs_dir, ':.') -- make it relative to CWD
       end
 
-      -- Get note dir relative to vault, then add "attachments"
-      local rel_dir = vim.fn.fnamemodify(note, ':h')
-      -- Strip vault prefix safely
-      rel_dir = rel_dir:gsub('^' .. vim.pesc(vault) .. '/?', '')
-      local folder = (rel_dir ~= '' and (rel_dir .. '/attachments')) or 'attachments'
+      -- Prompt for folder (with default)
+      local target = vim.fn.input('Attachment folder: ', default_folder)
+      if target == '' then
+        target = default_folder
+      end
 
-      local name = os.date 'img-%Y%m%d-%H%M%S'
-      -- Override target folder per paste (must be vault-relative)
-      vim.cmd(('ObsidianPasteImg %s/%s'):format(vim.fn.fnameescape(folder), name))
+      -- Prompt for filename (with timestamp default)
+      local default_name = os.date 'img-%Y%m%d-%H%M%S'
+      local name = vim.fn.input('File name (blank for timestamp): ', default_name)
+      if name == '' then
+        name = default_name
+      end
+
+      -- Paste the image using Obsidian's command
+      vim.cmd(('ObsidianPasteImg %s/%s'):format(vim.fn.fnameescape(target), name))
     end
 
     vim.keymap.set('n', '<leader>op', obsidian_paste_local, { desc = 'Paste image to local attachments' })
+
+    -- Markdown linting command
+    vim.api.nvim_create_user_command('ObsidianLint', function()
+      vim.diagnostic.setloclist { open = true }
+    end, { desc = 'Show Markdown diagnostics for broken links' })
   end,
 }
