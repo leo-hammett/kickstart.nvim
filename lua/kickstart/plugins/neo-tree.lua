@@ -14,11 +14,36 @@ return {
     { '\\', ':Neotree reveal<CR>', desc = 'NeoTree reveal', silent = true },
   },
   opts = {
+    sources = { 'filesystem', 'buffers', 'git_status' },
+    source_selector = {
+      winbar = true,
+      statusline = false,
+      content_layout = 'center',
+      sources = {
+        { source = 'filesystem', display_name = ' Files' },
+        { source = 'buffers', display_name = ' Buffers' },
+        { source = 'git_status', display_name = ' Git' },
+      },
+    },
+    window = {
+      mappings = {
+        ['\\'] = 'close_window',
+        t = 'open_tabnew',
+        T = 'open_tab_drop',
+        s = 'split_with_window_picker',
+        v = 'vsplit_with_window_picker',
+      },
+    },
     filesystem = {
-      window = {
-        mappings = {
-          ['\\'] = 'close_window',
-        },
+      follow_current_file = {
+        enabled = true,
+        leave_dirs_open = true,
+      },
+      filtered_items = {
+        hide_dotfiles = false,
+        hide_gitignored = true,
+        never_show = { '.DS_Store' },
+        always_show = { '.obsidian' },
       },
     },
   },

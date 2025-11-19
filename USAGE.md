@@ -111,7 +111,7 @@ which wl-paste
 **How It Works:**
 - Images are saved relative to the current note
 - If note is in `~/vaults/Lexicon/`, images go to `attachments/` in that directory
-- Markdown link is automatically inserted: `![filename](attachments/filename.png)`
+- Wiki-link embed is automatically inserted: `![[attachments/filename.png]]`
 - Images can be previewed in Neovim using Snacks (if configured)
 
 **Example Workflow:**
@@ -125,8 +125,21 @@ which wl-paste
 Turn lecture slide PDFs into editable Markdown without leaving Neovim.
 
 **Dependencies**
+- For inline image placement install [`marker`](https://github.com/datalab-to/marker): `pip install marker-pdf`. It uses Docling + Surya + Texify to convert PDFs (and other office docs) to Markdown/JSON while extracting images/tables inline.
+- If you keep Marker inside a tool launcher (e.g. [uv](https://docs.astral.sh/uv/)), set `vim.g.custom_pdf_marker_command` to the exact argv list. Example:
+  ```lua
+  vim.g.custom_pdf_marker_command = { 'uv', 'run', 'marker_single' }
+  ```
 - Install `pdftotext` (Poppler): `brew install poppler` on macOS or use your package manager on Linux
 - Optional: point `vim.g.custom_pdf_parser_command` to another CLI that outputs Markdown/text to stdout (e.g. `{ 'pdf2md' }`)
+- Image capture piggybacks on Poppler’s `pdfimages -png`. Disable (set `vim.g.custom_pdf_embed_images = false`) or override the command via `vim.g.custom_pdf_image_command`.
+- Header/footer cleanup removes repeated lines from each page by default. Toggle with:
+  - `vim.g.custom_pdf_strip_headers = false`
+  - `vim.g.custom_pdf_strip_footers = false`
+- Choose the parser strategy with `vim.g.custom_pdf_parser`:
+  - `'auto'` (default) prefers Marker when available, falls back to the Poppler-based pipeline otherwise.
+  - `'marker'` enforces inline placement (errors if the CLI is missing).
+  - `'legacy'` restores the previous `pdftotext` + `pdfimages` flow.
 
 **Import new PDFs (`<leader>pa`):**
 1. Open the markdown note where the content should land.
@@ -142,8 +155,16 @@ Turn lecture slide PDFs into editable Markdown without leaving Neovim.
 2. Select one of the PDFs already living in `attachments/`.
 3. The parsed Markdown is inserted at the cursor; the PDF stays untouched.
 
+**Embedded images**
+- Whenever `pdfimages` is available, thumbnails/figures from the PDF are exported into `attachments/<pdf-name>_images/`.
+- When Marker is active, its Markdown already contains inline references such as `![[attachments/<pdf>_marker/<pdf>/images/figure-1.jpg|Figure caption]]`, so graphics land exactly where they were in the slide deck.
+- In legacy mode the Markdown block appends `![[attachments/...|PDF image N]]` wiki embeds so Obsidian (and Neovim previewers) can render them inline.
+- Disable this feature with `vim.g.custom_pdf_embed_images = false` if you only want text, or switch tools by setting `vim.g.custom_pdf_image_command`.
+
 **Tips & verification**
 - Run `which pdftotext` (or your custom parser) to confirm the binary is available before relying on the shortcut.
+- If you rely on inline placement, run `marker_single sample.pdf --output_dir ./output --output_format markdown` after `pip install marker-pdf` to be sure the CLI and PyTorch deps are ready before calling `<leader>pa`.
+- When using uv/pipx, ensure the shimmed binary is on `$PATH` *or* point `vim.g.custom_pdf_marker_command` at the wrapper command (e.g. `{ 'uvx', 'marker-single' }`).
 - Parsing uses the command synchronously—very large PDFs can take a few seconds.
 - If the parser returns no text, the note gets `_No text extracted_` so you can spot problematic files quickly.
 
@@ -368,6 +389,13 @@ tmux split-window "nvim ~/vaults/Lexicon/notes.md"
 - `C-b o` - Switch between panes
 - `C-b z` - Zoom/unzoom current pane
 
+**Neovim-friendly tmux remaps:**
+- Copy `tmux/tmux.conf.example` to `~/.tmux.conf` (or append its contents) for a workflow aligned with these notes
+- Prefix moves to `C-a`, pane navigation/resize keys become `hjkl` / `HJKL`
+- `prefix + n` opens a fresh “Notes” window that launches `nvim` with Neo-tree already focused
+- `prefix + e` sends `:Neotree toggle reveal` to the active Neovim pane so you can open/close the tree from tmux
+- `|` / `-` split panes while preserving the current directory; `[` and `]` tab through windows, `y` / `Y` toggle synchronized panes when presenting
+
 **Recommended Tmux Workflow for Note-Taking:**
 
 1. **Create dedicated tmux session:**
@@ -418,12 +446,23 @@ chmod +x ~/.local/bin/notes
 
 Now you can just run `notes` from terminal to jump into your note-taking environment!
 
-**Neo-tree File Explorer:**
-- Press `<C-n>` or `:Neotree` to toggle file explorer
+**Neo-tree File Explorer (with tabs):**
+- Press `<C-n>` or `\` (backslash) to toggle Neo-tree and reveal the active file
+- Use the tab-like source selector in the winbar to jump between **Files**, **Buffers**, and **Git**
 - Navigate with `j`/`k`, open with `<Enter>`
-- Press `t` to open file in new tab
-- Press `s` to open in vertical split
-- Press `S` to open in horizontal split
+- Press `t` for a new tab, `T` to open in a new tab but keep Neo-tree focused
+- Press `s` / `v` for horizontal / vertical splits (window picker aware)
+- Press `\` again to close the tree quickly
+
+**Tips**
+- Neo-tree follows the buffer you’re editing so the tree always expands to the correct folder
+- Hidden files are shown (handy for `.obsidian`), but noisy entries like `.DS_Store` remain hidden
+
+**Closing tabs & splits**
+- Neo-tree panel: hit `\` (or `q`) to close it instantly.
+- Neovim tabs created with `t`/`T`: use `:tabclose`, `:tabonly`, `gt`/`gT`, or `:tabnext {n}` to navigate and close.
+- Splits opened with `s`/`v`: `:q` closes the focused split, `:only` leaves just the current view.
+- Buffers: `:bdelete` (or `<leader>bd` if you use that keymap) removes the file without killing the tab.
 
 ### Editing
 

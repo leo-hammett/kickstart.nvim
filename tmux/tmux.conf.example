@@ -1,0 +1,38 @@
+# Recommended tmux keymaps for the Neovim + Obsidian workflow
+
+# Change prefix to <Ctrl-a> (muscle memory from GNU Screen)
+unbind C-b
+set -g prefix C-a
+bind C-a send-prefix
+
+# Open panes relative to current working directory
+bind | split-window -h -c "#{pane_current_path}"
+bind - split-window -v -c "#{pane_current_path}"
+
+# Fast pane navigation with hjkl (matches Neovim)
+bind h select-pane -L
+bind j select-pane -D
+bind k select-pane -U
+bind l select-pane -R
+
+# Quickly resize panes
+bind -r H resize-pane -L 5
+bind -r J resize-pane -D 5
+bind -r K resize-pane -U 5
+bind -r L resize-pane -R 5
+
+# Create a new window that launches Neovim with Neo-tree focused
+bind n new-window -n "Notes" "cd ~/vaults/Lexicon && nvim '+Neotree reveal left'"
+
+# Toggle Neo-tree inside the currently focused Neovim pane
+# (assumes the pane is running Neovim in normal mode)
+bind e run-shell 'tmux send-keys -t "{last}" ":Neotree toggle reveal<CR>"'
+
+# Switch tmux windows like browser tabs
+bind -r [ previous-window
+bind -r ] next-window
+
+# Synchronize panes temporarily (great for broadcasting commands during lectures)
+bind y set-window-option synchronize-panes\ on
+bind Y set-window-option synchronize-panes\ off
+
