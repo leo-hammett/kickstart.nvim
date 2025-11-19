@@ -4,8 +4,9 @@ return {
   ---@type snacks.Config
   opts = {
     image = {
-      -- Enable image previews in Neovim buffers
-      enabled = true,
+      -- Disable Snacks image rendering so we don't double-render
+      -- attachments (image.nvim already handles markdown embeds).
+      enabled = false,
       -- Style for image rendering: 'cover', 'contain', or 'fill'
       style = 'cover',
       -- Maximum width/height for images (0 = no limit)
