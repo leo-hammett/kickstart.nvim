@@ -17,6 +17,7 @@ A starting point for Neovim that is:
 - `lua/custom/plugins/snacks.lua` pulls in `folke/snacks.nvim` (with the image module enabled) so pasted images or attachments can be previewed directly inside Neovim buffers.
 - `init.lua` adds quality-of-life tweaks beyond upstream Kickstart: automatic tab width detection via `NMAC427/guess-indent.nvim`, Markdown-focused LSP support by registering `marksman`, an explicit `PasteImage` keybind, and `tokyonight` styling changes (non-italic comments).
 - `lua/custom/plugins/typst.lua` adds Typst support with syntax highlighting, LSP integration, and keymaps for compiling/watching PDFs.
+- `lua/custom/features/lecture_coach.lua` wires a local “Lecture Coach” helper that watches Markdown buffers, captures the text surrounding your cursor, and calls OpenAI (`gpt-4o-mini`) to insert reflection prompts via `<leader>mq` (deep question) or `<leader>mb` (quick focus boost). Set `OPENAI_API_KEY` (or `vim.g.lecture_ai_coach.provider.api_key`) before triggering it.
 
 ## Neovim Workflow Guide
 

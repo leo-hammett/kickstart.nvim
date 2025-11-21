@@ -11,6 +11,12 @@ return {
       max_height = 800,
       lazy = true, -- render when cursor nears image
       max_images = 20, -- prevent loading hundreds at once
+      -- Explicitly define supported formats to prevent errors with PDF/PPTX
+      -- (Removing 'pdf' from the default list avoids the LibreOffice/Ghostscript errors)
+      formats = {
+        "png", "jpg", "jpeg", "gif", "bmp", "webp", "tiff", "heic", "avif",
+        "mp4", "mov", "avi", "mkv", "webm"
+      },
     },
   },
 }

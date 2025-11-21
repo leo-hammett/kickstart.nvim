@@ -168,6 +168,55 @@ Turn lecture slide PDFs into editable Markdown without leaving Neovim.
 - Parsing uses the command synchronously—very large PDFs can take a few seconds.
 - If the parser returns no text, the note gets `_No text extracted_` so you can spot problematic files quickly.
 
+### Lecture Coach Prompts
+
+Surface “do I really understand this?” moments without leaving the note you are reading.
+
+**Requirements**
+- Export `OPENAI_API_KEY` in your shell (or set `vim.g.lecture_ai_coach = { provider = { api_key = '...' } }` in `init.lua`).
+- Works inside Markdown-like buffers only (`markdown`, `md`, `rmd`, `quarto`).
+- Needs `curl` for the HTTPS request (already a dependency for other workflows).
+
+**Keymaps & Commands**
+- `<leader>q` / `:LectureCoachAsk` – full reflection prompt that reads ~90 lines before the cursor.
+- `<leader>Q` / `:LectureCoachBoost` – “focus boost” pulse-check that only looks at the last ~40 lines for a fast question mid-lecture.
+
+**What it does**
+1. Captures the text surrounding your cursor (only the portion you have already read).
+2. Sends the excerpt + heading metadata to OpenAI `gpt-4o-mini`.
+3. Inserts a block like:
+   ```
+   > 🧠 Lecture Coach · conceptual probe
+   > Q: …
+   > Hint: revisit “Gradient Flow Assumptions”
+   - [ ] Answer:
+   ```
+4. Leaves your cursor on the checklist so you can answer immediately.
+
+**Customising difficulty/context/answer length**
+Tweak any field from Lua before the feature initializes (e.g. inside `init.lua`):
+```lua
+vim.g.lecture_ai_coach = {
+  context = { before = 120, after = 6 },
+  profiles = {
+    question = {
+      difficulty = 'rigorous derivation',
+      expected_answer = '1-2 short paragraphs + an equation checkpoint',
+    },
+    boost = {
+      expected_answer = 'one sentence',
+      context_before = 25,
+    },
+  },
+}
+```
+You can also add `provider = { model = 'gpt-4o-mini', temperature = 0.2 }` or supply a static `api_key` if you prefer not to rely on the environment.
+
+**Tips**
+- If a request is already running, the plugin prevents concurrent prompts; wait for the first answer.
+- The reference hint always points to a phrase from the captured excerpt, so if it looks wrong double-check that your cursor is in the section you care about.
+- For offline study sessions you can temporarily disable the feature by setting `vim.g.lecture_ai_coach = { filetypes = {} }` before starting Neovim.
+
 ### Markdown Editing
 
 **Toggle Conceal:**
@@ -239,7 +288,7 @@ Typst is a modern markup-based typesetting system, perfect for academic papers, 
 
 **Compilation:**
 - `<leader>tc` - Compile current `.typst` file to PDF
-- `<leader>tw` - Watch mode: auto-compile on save
+- `<leader>tw` - Watch mode toggle (auto-compile in background)
 - `<leader>to` - Open generated PDF (platform-aware)
 
 **Insert Mode Shortcuts:**
@@ -823,4 +872,3 @@ GENERAL:
 
 *Last updated: 2024*
 *Configuration version: Based on kickstart.nvim with custom enhancements*
-
