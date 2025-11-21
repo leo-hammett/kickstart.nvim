@@ -4,14 +4,13 @@ return {
   ---@type snacks.Config
   opts = {
     image = {
-      -- Disable Snacks image rendering so we don't double-render
-      -- attachments (image.nvim already handles markdown embeds).
-      enabled = false,
-      -- Style for image rendering: 'cover', 'contain', or 'fill'
+      enabled = true,
       style = 'cover',
-      -- Maximum width/height for images (0 = no limit)
-      max_width = 0,
-      max_height = 0,
+      -- Keep previews sane to avoid giant renders
+      max_width = 1200,
+      max_height = 800,
+      lazy = true, -- render when cursor nears image
+      max_images = 20, -- prevent loading hundreds at once
     },
   },
 }
